@@ -15,9 +15,9 @@ bool IsInRange(int x, int y)
 	return (abs(x) < (g_nClientWidth / 2)) && (abs(y) < (g_nClientHeight / 2));
 }
 
-void PutPixel(const IntPoint& Inpt)
+void PutPixel(const IntPoint& InPt)
 {
-	PutPixel(Inpt.X, Inpt.Y);
+	PutPixel(InPt.X, InPt.Y);
 }
 
 void PutPixel(int x, int y)
@@ -38,33 +38,45 @@ void UpdateFrame(void)
 
 	// Draw
 	SetColor(255, 0, 0);
-	
-	// Draw a circle with radius 100
-	Vector2 center(0.0f, 0.0f);
-	float radius = 100.0f;
-	float nradius = (int)radius;
 
-	Matrix2 scaleMat;
-	scaleMat.SetScale(2.0f, 0.5f);
-	
-	
+	// Draw a filled circle with radius 100
+	Vector3 center(0.0f, 0.0f);
+	float radius = 100.0f;
+	int nradius = (int)radius;
+
+	static float degree = 0;
+	degree += 1;
+	degree = fmodf(degree, 360.0f);
+
+	Matrix3 rotMat;
+	rotMat.SetRotation(degree);
+	rotMat.Transpose();
+
+	float maxScale = 1;
+	float scale = ((sinf(Deg2Rad(degree * 2)) + 1) * 0.5) * maxScale;
+	if (scale < 0.5f) scale = 0.5f;
+
+	Matrix3 scaleMat;
+	scaleMat.SetScale(scale, scale, scale);
+
+	float maxPos = 150;
+	float pos = sinf(Deg2Rad(degree)) * maxPos;
+	Matrix3 translationMat;
+	translationMat.SetTranslation(pos, pos);
+
+	Matrix3 SR = scaleMat * rotMat;
+
+	// 행렬의 역순
+	Matrix3 TRS = translationMat * rotMat * scaleMat;
+	//Matrix3 SRT = scaleMat * rotMat * scaleMat;
+
 	for (int i = -nradius; i <= nradius; i++)
 	{
 		for (int j = -nradius; j <= nradius; j++)
 		{
-			IntPoint pt(i, j);
-			Vector2 ptVec = pt.InVector2();
-			if (Vector2::DistSquared(center, ptVec) <= radius * radius)
-			{
-				IntPoint scaledPt(ptVec * scaleMat);
-				PutPixel(scaledPt);
-			}
+			PutPixel(Vector3((float)i, (float)j) * TRS);
 		}
 	}
-	
-	//PutPixel(0, 0);
-
-	
 
 	// Buffer Swap 
 	BufferSwap();
